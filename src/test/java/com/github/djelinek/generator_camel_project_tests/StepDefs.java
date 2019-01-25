@@ -1,4 +1,5 @@
 /*
+
  * Copyright (C) 2018 Red Hat, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,6 +32,8 @@ public class StepDefs {
 	private Process process;
 	private File camelProject;
 
+	private boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows");
+
 	@Given("^Create folder for new camel project - \\\"([^\\\"]*)\\\"")
 	public void create_folder_for_new_camel_project(String projectName) throws IOException, InterruptedException {
 		camelProject = new File(System.getProperty("user.dir") + GENERATOR_CAMEL_PROJECT_PATH + projectName);
@@ -39,7 +42,12 @@ public class StepDefs {
 
 	@When("^I generate a project with default values - \"([^\"]*)\"$")
 	public void i_generate_a_project_with_default_values(String arg) throws IOException, InterruptedException {
-		process = Runtime.getRuntime().exec(arg, null, camelProject);
+		if (isWindows) {
+		    process = Runtime.getRuntime()
+		      .exec(String.format("cmd.exe /c %s", arg), null, camelProject);
+		} else {
+			process = Runtime.getRuntime().exec(arg, null, camelProject);
+		}
 		Utils.setProcessConsoleInput(process, true, "\n", "\n" ,"\n", "\n");
 		process.waitFor();
 	}
@@ -56,7 +64,11 @@ public class StepDefs {
 	}
 	
 	private Process syncExecuteMaven(String projectLocation, String goals) throws IOException, InterruptedException {
-		return Runtime.getRuntime().exec("mvn -f " + projectLocation + " " + goals);
+		if (isWindows) {
+			return Runtime.getRuntime().exec("cmd.exe /c mvn -f " + projectLocation + " " + goals);
+		} else {
+			return Runtime.getRuntime().exec("mvn -f " + projectLocation + " " + goals);
+		}
 	}
 
 }
