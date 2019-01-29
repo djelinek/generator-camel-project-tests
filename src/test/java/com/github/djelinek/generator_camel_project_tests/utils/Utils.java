@@ -13,13 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.djelinek.generator_camel_project_tests;
+package com.github.djelinek.generator_camel_project_tests.utils;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Comparator;
 
 /**
  * Contains some utils methods used in various step definitions
@@ -71,6 +75,9 @@ public class Utils {
 				BufferedWriter out = null;
 				if((out = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()))) != null && lineNumber > 15) {
 					out.write(input[i]);
+					if(!input[i].contains("\n")) {
+						out.newLine();
+					}
 					out.flush();
 					if(i < input.length-1) {
 						i++;
@@ -84,5 +91,9 @@ public class Utils {
 			}
 		}
 		return builder.toString();
+	}
+	
+	public static void deleteDirectory(Path path) throws IOException {
+		Files.walk(path).sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
 	}
 }
