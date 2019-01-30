@@ -15,8 +15,13 @@ The generator is located in the npm repository (<https://www.npmjs.com/package/g
 Get the code:
 > git clone <https://github.com/djelinek/generator-camel-project-tests.git>
 
-Executing of all default test scenarios - ***CamelProjectTests***:
+Executing of all default test scenarios - *CamelProjectTests*:
 > mvn clean package
 
 Executing of specific available test feature:
 > mvn clean package -Dtest={test}
+
+### Available test scenarios
+
+- CamelProjectTests
+- CamelProjectRunTests
