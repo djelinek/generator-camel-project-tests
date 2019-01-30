@@ -16,10 +16,10 @@
 package com.github.djelinek.generator_camel_project_tests.utils;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import cucumber.api.java.en.Given;
@@ -35,16 +35,18 @@ public class StepDefs {
 
 	private boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows");
 
-	@Given("^Create folder for new camel project - \"([^\\\"]*)\"$")
+	@Given("^Create folder for new camel project - \"([^\"]*)\"$")
 	public void create_folder_for_new_camel_project(String projectName) throws IOException, InterruptedException {
 		camelProject = new File(GENERATOR_CAMEL_PROJECT_PATH + projectName);
 		assertTrue("The new camel project folder creation failed!", camelProject.mkdir());
 	}
 
-	@Given("^Delete project folder - \"([^\\\"]*)\"$")
-	public void delete_project_folder(String folder) throws IOException {
-		Path path = Paths.get(GENERATOR_CAMEL_PROJECT_PATH + folder);
-		Utils.deleteDirectory(path);
+	@Given("^Delete project folder - \"([^\"]*)\"$")
+	public void delete_project_folder_if_exists(String folder) throws IOException {
+		String path = GENERATOR_CAMEL_PROJECT_PATH + folder;
+		if(new File(path).exists()) {
+			Utils.deleteDirectory(Paths.get(path));
+		}
 	}
 
 	@When("^I generate a project with default values - \"([^\"]*)\"$")
@@ -71,6 +73,29 @@ public class StepDefs {
 	public void the_project_is_successfully_built() throws Exception {
 		String log = Utils.getProcessOutPut(process, true);
 		assertTrue("Something went wrong during the build of the project", log.contains("BUILD SUCCESS"));
+	}
+	
+	@Then("^The project is successfully running$")
+	public void the_project_is_successfully_running() throws Exception {
+		String message = "Hello";
+		boolean isRunning = false;
+		for (int i = 0; i < 10; i++) {
+			try {
+				if (Utils.checkAndlogProcessOutput(process, message)) {
+					isRunning = true;
+					break;
+				}
+			} catch (IOException e) {
+				if(e.getMessage().equals("Stream closed")) {
+					fail("The generated camel project is not running properly - BUILD FAILED");
+				} else {
+					throw new Exception(e);
+				}
+				
+			}
+			Thread.sleep(500);
+		}
+		assertTrue("The generated project is not running properly", isRunning);
 	}
 
 	private Process syncExecuteMaven(String projectLocation, String goals) throws IOException, InterruptedException {
