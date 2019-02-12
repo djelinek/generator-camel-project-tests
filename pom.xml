@@ -9,9 +9,8 @@
 	express or implied. See the License for the specific language governing permissions 
 	and limitations under the License. -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.github.djelinek</groupId>
 	<artifactId>generator-camel-project-tests</artifactId>
@@ -57,10 +56,34 @@
 							<goal>checkout</goal>
 						</goals>
 						<configuration>
-							<connectionUrl>scm:git:https://github.com/camel-tooling/generator-camel-project</connectionUrl>
-							<developerConnection>scm:git:https://github.com/camel-tooling/generator-camel-project</developerConnection>
+							<connectionUrl>scm:git:https://github.com/djelinek/generator-camel-project</connectionUrl>
+							<developerConnection>scm:git:https://github.com/djelinek/generator-camel-project</developerConnection>
+							<!-- <connectionUrl>scm:git:https://github.com/camel-tooling/generator-camel-project</connectionUrl>
+							<developerConnection>scm:git:https://github.com/camel-tooling/generator-camel-project</developerConnection> -->
 							<workingDirectory>target/generator-camel-project</workingDirectory>
 							<checkoutDirectory>target/generator-camel-project</checkoutDirectory>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>exec-maven-plugin</artifactId>
+				<version>1.6.0</version>
+				<executions>
+					<execution>
+						<id>npm-link-generator</id>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<phase>initialize</phase>
+						<configuration>
+							<workingDirectory>target/generator-camel-project</workingDirectory>
+							<executable>npm</executable>
+							<arguments>
+								<argument>link</argument>
+							</arguments>
 						</configuration>
 					</execution>
 				</executions>

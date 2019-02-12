@@ -12,6 +12,6 @@ Feature: Can be Camel project create with prompts?
     Then The project is successfully built
 
   Scenario: Using user defined values
-    When I generate a project with user defined values - "yo camel-project" and "myproject" and "2.21.1" and "spring" and "com.example.test"
+    When I generate a project with user defined values - "yo camel-project" and "myproject" and "2.22.2" and "spring" and "com.example.test"
     And I execute Maven with goals "install"
     Then The project is successfully built

@@ -7,6 +7,6 @@ Feature: Can be Camel project create without prompts?
     Given Create folder for new camel project - "example"
 
   Scenario: Using default values
-    When I generate a project with default values - "yo camel-project appname=MyApp camelVersion=2.19.1 camelDSL=spring package=com.myapp"
+    When I generate a project without prompts - "yo camel-project appname=MyApp camelVersion=2.22.2 camelDSL=spring package=com.myapp"
     And I execute Maven with goals "install"
     Then The project is successfully built

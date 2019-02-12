@@ -27,12 +27,14 @@ import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
 
 public class StepDefs {
-
+	
 	private static final String GENERATOR_CAMEL_PROJECT_PATH = System.getProperty("user.dir") + "/target/generator-camel-project/";
 
 	private Process process;
+	private Process soapService;
+	private Process genMessage;
 	private File camelProject;
-
+	
 	private boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows");
 
 	@Given("^Create folder for new camel project - \"([^\"]*)\"$")
@@ -48,11 +50,36 @@ public class StepDefs {
 			Utils.deleteDirectory(Paths.get(path));
 		}
 	}
+	
+	@Given("^Build wsdl2rest generator feature")
+	public void build_wsdl2rest_generator_feature() throws IOException, InterruptedException {
+		process = syncExecuteMaven(GENERATOR_CAMEL_PROJECT_PATH + "app/wsdl2rest/", "clean package");
+		process.waitFor();
+	}
+	
+	@Given("^Manual start of built-in node.js-powered SOAP service")
+	public void manual_start_of_built_in_nodejs_powered_SOAP_service() throws Exception {
+		String[] cmds = {"node", "manualstart.js"};
+		soapService = Runtime.getRuntime().exec(cmds, null, new File(GENERATOR_CAMEL_PROJECT_PATH + "manual/"));
+		waitUntilConsoleHasText(soapService, "server running");		
+	}
+	
+	@Given("^Stop running SOAP service") 
+	public void stop_running_soap_service() {
+		soapService.destroy();
+		genMessage.destroy();
+	}
 
 	@When("^I generate a project with default values - \"([^\"]*)\"$")
 	public void i_generate_a_project_with_default_values(String arg) throws IOException, InterruptedException {
 		process = executeShellCommand(arg);
 		Utils.setProcessConsoleInput(process, true, "\n", "\n", "\n", "\n");
+		process.waitFor();
+	}
+	
+	@When("^I generate a project without prompts - \"([^\"]*)\"$")
+	public void i_generate_a_project_without_prompts(String arg) throws IOException, InterruptedException {
+		process = executeShellCommand(arg);
 		process.waitFor();
 	}
 
@@ -61,6 +88,14 @@ public class StepDefs {
 			String dslType, String packageName) throws IOException, InterruptedException {
 		process = executeShellCommand(arg);
 		Utils.setProcessConsoleInput(process, true, projectName, camelVersion, dslType, packageName);
+		process.waitFor();
+	}
+	
+	@When("^I generate a project with user defined values wsdl2rest - \"([^\"]*)\" and \"([^\"]*)\" and \"([^\"]*)\" and \"([^\"]*)\" and \"([^\"]*)\" and \"([^\"]*)\" and \"([^\"]*)\" and \"([^\"]*)\" and \"([^\"]*)\"$")
+	public void i_generate_a_project_with_user_defined_values_wsdl2rest(String arg, String projectName, String camelVersion,
+			String dslType, String packageName, String wsdl, String outDir, String jaxrs, String jaxws) throws IOException, InterruptedException {
+		process = executeShellCommand(arg);
+		Utils.setProcessConsoleInput(process, true, projectName, camelVersion, dslType, packageName, wsdl, outDir, jaxrs, jaxws);
 		process.waitFor();
 	}
 
@@ -75,27 +110,31 @@ public class StepDefs {
 		assertTrue("Something went wrong during the build of the project", log.contains("BUILD SUCCESS"));
 	}
 	
-	@Then("^The project is successfully running$")
-	public void the_project_is_successfully_running() throws Exception {
-		String message = "Hello";
-		boolean isRunning = false;
-		for (int i = 0; i < 10; i++) {
-			try {
-				if (Utils.checkAndlogProcessOutput(process, message)) {
-					isRunning = true;
-					break;
-				}
-			} catch (IOException e) {
-				if(e.getMessage().equals("Stream closed")) {
-					fail("The generated camel project is not running properly - BUILD FAILED");
-				} else {
-					throw new Exception(e);
-				}
-				
+	@Then("^The project is successfully running - \"([^\"]*)\"$")
+	public void the_project_is_successfully_running(String message) throws Exception {
+		try {			
+			assertTrue("The generated camel project is not running properly", waitUntilConsoleHasText(process, message));
+		} catch (Exception e) {
+			if(e.getMessage().equals("Stream closed")) {
+				fail("The generated camel project is not running properly - BUILD FAILED");
+			} else {
+				throw new Exception(e);
 			}
-			Thread.sleep(500);
-		}
-		assertTrue("The generated project is not running properly", isRunning);
+		}	
+	}
+	
+	@Then("^The service is successfully running - \"([^\"]*)\" and \"([^\"]*)\"$")
+	public void the_service_is_successfully_running(String arg, String message) throws Exception {
+		genMessage = syncExecuteMaven(camelProject.getAbsolutePath(), arg);
+		waitUntilConsoleHasText(genMessage, message);
+	}
+	
+	@Then("^The running service generates message - \"([^\"]*)\"$")
+	public void the_running_service_generates_message(String message) throws Exception {
+		process = Runtime.getRuntime().exec("curl -s POST http://localhost:8081/rest/hello/%22" + message + "%22");
+		process.waitFor();
+		String output = Utils.getProcessOutPut(process, true);
+		assertTrue("The generated service is not generating messages properly", output.contains("Hello " + message));
 	}
 
 	private Process syncExecuteMaven(String projectLocation, String goals) throws IOException, InterruptedException {
@@ -112,6 +151,18 @@ public class StepDefs {
 		} else {
 			return Runtime.getRuntime().exec(arg, null, camelProject);
 		}
+	}
+	
+	private boolean waitUntilConsoleHasText(Process process, String text) throws Exception {
+		boolean isRunning = false;
+		for (int i = 0; i < 10; i++) {
+			if (Utils.checkAndlogProcessOutput(process, text)) {
+				isRunning = true;
+				break;
+			}
+			Thread.sleep(500);
+		}
+		return isRunning;
 	}
 
 }
