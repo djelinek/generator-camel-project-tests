@@ -25,3 +25,4 @@ Executing of specific available test feature:
 
 - CamelProjectTests
 - CamelProjectRunTests
+- WSDL2RestTests
